@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MeuDesk</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Crect x='10' y='34' width='10' height='20' rx='3' fill='%23f59e0b'/%3E%3Crect x='27' y='22' width='10' height='32' rx='3' fill='%233b82f6'/%3E%3Crect x='44' y='10' width='10' height='44' rx='3' fill='%2322c55e'/%3E%3C/svg%3E" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0f172a" />
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #263449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --pendente: #f59e0b;
+    --andamento: #3b82f6;
+    --finalizado: #22c55e;
+    --danger: #ef4444;
+    --p-baixa: #94a3b8;
+    --p-alta: #f97316;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 {
+    font-size: 20px;
+    margin: 0;
+    font-weight: 600;
+  }
+  header .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn-new {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-new:hover { background: var(--accent-hover); }
+
+  .view-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .view-tab {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .view-tab.active { background: var(--accent); color: white; }
+  .view-tab:not(.active):hover { color: var(--text); }
+
+  .board-toolbar {
+    display: flex;
+    gap: 10px;
+    padding: 18px 28px 0 28px;
+  }
+  .board-toolbar input, .board-toolbar select {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .board-toolbar input { flex: 1; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 16px 28px 24px 28px;
+    align-items: start;
+  }
+  .column {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 14px;
+    min-height: 200px;
+    border: 1px solid var(--border);
+  }
+  .column-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot.pendente { background: var(--pendente); }
+  .dot.andamento { background: var(--andamento); }
+  .dot.finalizado { background: var(--finalizado); }
+  .column-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .count-wrap { margin-left: auto; display: flex; align-items: center; }
+  .count {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .count.over-limit { background: rgba(239,68,68,0.25); color: var(--danger); font-weight: 700; }
+  .column.over-limit-column { border-color: var(--danger); }
+  .wip-limit-input {
+    width: 50px;
+    background: var(--panel-2);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 2px 8px;
+    text-align: center;
+  }
+
+  .aging-badge, .prazo-badge {
+    margin-left: auto;
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .aging-badge.ok, .prazo-badge.ok { background: rgba(148,163,184,0.15); color: var(--muted); }
+  .aging-badge.atencao, .prazo-badge.hoje { background: rgba(249,115,22,0.18); color: var(--p-alta); }
+  .aging-badge.critico, .prazo-badge.vencido { background: rgba(239,68,68,0.2); color: var(--danger); }
+  .prazo-badge { margin-left: 0; }
+
+  /* Arquivados */
+  .archive-wrap { padding: 24px 28px; }
+  .archive-list { display: flex; flex-direction: column; gap: 10px; max-width: 760px; }
+  .archive-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .archive-item-info { display: flex; flex-direction: column; gap: 2px; }
+  .archive-item-title { font-weight: 600; font-size: 14px; }
+  .archive-item-meta { font-size: 11.5px; color: var(--muted); }
+  .archive-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .cards { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
+  .cards.drag-over { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: 8px; }
+
+  .card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: grab;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.4; }
+  .card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+  .card-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .card-numero { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+  .priority-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .priority-badge.baixa { background: rgba(148,163,184,0.18); color: var(--p-baixa); }
+  .priority-badge.media { background: rgba(59,130,246,0.18); color: var(--andamento); }
+  .priority-badge.alta { background: rgba(249,115,22,0.18); color: var(--p-alta); }
+  .priority-badge.urgente { background: rgba(239,68,68,0.18); color: var(--danger); }
+
+  .card-status-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .card h3 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .card-desc {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .tag-chip {
+    font-size: 10.5px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 2px 7px;
+    border-radius: 999px;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    gap: 8px;
+  }
+  .card-activity-info { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+  .icon-btn.delete:hover { color: var(--danger); }
+
+  .empty-hint {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 20px 8px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  /* Calendar */
+  .calendar-wrap { padding: 24px 28px; }
+  .calendar-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .calendar-controls h2 {
+    font-size: 16px;
+    margin: 0;
+    min-width: 160px;
+    text-transform: capitalize;
+  }
+  .cal-nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .cal-nav-btn:hover { background: var(--panel-2); }
+  .cal-today-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .cal-today-btn:hover { background: var(--panel-2); }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .cal-weekday {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    padding-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .cal-day {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-height: 96px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.1s;
+  }
+  .cal-day:hover { border-color: var(--accent); }
+  .cal-day.other-month { opacity: 0.35; }
+  .cal-day.today { border-color: var(--accent); border-width: 2px; }
+  .cal-day-num { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .cal-chips { display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+  .cal-chip {
+    font-size: 10.5px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cal-chip.pendente { background: rgba(245,158,11,0.18); color: var(--pendente); }
+  .cal-chip.andamento { background: rgba(59,130,246,0.18); color: var(--andamento); }
+  .cal-chip.finalizado { background: rgba(34,197,94,0.18); color: var(--finalizado); }
+  .cal-chip-more { font-size: 10.5px; color: var(--muted); padding: 0 5px; }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 420px;
+    max-width: 90vw;
+  }
+  .modal h2 { margin: 0 0 16px 0; font-size: 17px; }
+  .field { margin-bottom: 14px; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .field textarea { min-height: 80px; }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .btn-secondary:hover { background: var(--panel-2); }
+  .btn-secondary.danger { border-color: var(--danger); color: var(--danger); }
+  .btn-secondary.danger:hover { background: rgba(239,68,68,0.1); }
+
+  /* Day panel */
+  .day-modal { width: 480px; }
+  .day-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .day-modal-header h2 { margin: 0; text-transform: capitalize; font-size: 16px; }
+  .day-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-bottom: 4px;
+  }
+
+  /* Detail modal */
+  .detail-modal { width: 560px; max-height: 88vh; overflow-y: auto; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .detail-numero { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .detail-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
+
+  .activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .activity-item { font-size: 13px; }
+  .activity-time { font-size: 11px; color: var(--muted); display: block; margin-bottom: 2px; }
+  .activity-input-row { display: flex; gap: 8px; }
+  .activity-input-row input { flex: 1; }
+
+  /* Turno modal */
+  .turno-modal { width: 540px; }
+  .turno-modal textarea {
+    min-height: 300px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12.5px;
+    white-space: pre;
+    line-height: 1.5;
+  }
+  .turno-alerta {
+    display: none;
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.4);
+    color: var(--pendente);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .turno-alerta-list { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .turno-alerta-item {
+    text-align: left;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+  .turno-alerta-item:hover { background: var(--panel); }
+
+  /* Card precisando de atualização */
+  .card.needs-update { border-color: var(--pendente); box-shadow: 0 0 0 1px rgba(245,158,11,0.25); }
+
+  /* Anexos / prints */
+  .anexos-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .anexo-thumb {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .anexo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .anexo-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(15,23,42,0.8);
+    color: white;
+    border: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    padding: 0;
+    cursor: pointer;
+  }
+  .anexo-upload-btn { display: inline-block; cursor: pointer; font-size: 13px; padding: 7px 12px; }
+  .anexo-hint { font-weight: 400; color: var(--muted); font-size: 11.5px; }
+
+  #lightboxOverlay { background: rgba(0,0,0,0.85); cursor: zoom-out; }
+  #lightboxOverlay img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MeuDesk</h1>
+    <div class="subtitle">Follow-up das suas demandas</div>
+  </div>
+  <div class="header-right">
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="board">Quadro</button>
+      <button class="view-tab" data-view="calendar">Calendário</button>
+      <button class="view-tab" data-view="archive">Arquivados</button>
+    </div>
+    <button class="btn-secondary" id="btnTurno">📋 Fechamento de turno</button>
+    <button class="btn-new" id="btnNovo">+ Novo ticket</button>
+  </div>
+</header>
+
+<div class="board-toolbar" id="boardToolbar">
+  <input type="text" id="searchInput" placeholder="Buscar por título, descrição ou tag..." />
+  <select id="filterPrioridade">
+    <option value="todas">Todas as prioridades</option>
+    <option value="urgente">Urgente</option>
+    <option value="alta">Alta</option>
+    <option value="media">Média</option>
+    <option value="baixa">Baixa</option>
+  </select>
+</div>
+
+<div class="board" id="boardView">
+  <div class="column" data-status="pendente">
+    <div class="column-header">
+      <span class="dot pendente"></span>
+      <h2>Pendente</h2>
+      <span class="count-wrap">
+        <span class="count" id="count-pendente">0</span>
+        <input type="number" class="wip-limit-input" id="wipinput-pendente" min="1" placeholder="∞" style="display:none;" />
+      </span>
+    </div>
+    <div class="cards" id="cards-pendente" data-status="pendente"></div>
+  </div>
+
+  <div class="column" data-status="andamento">
+    <div class="column-header">
+      <span class="dot andamento"></span>
+      <h2>Em andamento</h2>
+      <span class="count-wrap">
+        <span class="count" id="count-andamento">0</span>
+        <input type="number" class="wip-limit-input" id="wipinput-andamento" min="1" placeholder="∞" style="display:none;" />
+      </span>
+    </div>
+    <div class="cards" id="cards-andamento" data-status="andamento"></div>
+  </div>
+
+  <div class="column" data-status="finalizado">
+    <div class="column-header">
+      <span class="dot finalizado"></span>
+      <h2>Finalizado</h2>
+      <span class="count-wrap">
+        <span class="count" id="count-finalizado">0</span>
+        <input type="number" class="wip-limit-input" id="wipinput-finalizado" min="1" placeholder="∞" style="display:none;" />
+      </span>
+    </div>
+    <div class="cards" id="cards-finalizado" data-status="finalizado"></div>
+  </div>
+</div>
+
+<div class="calendar-wrap" id="calendarView" style="display:none;">
+  <div class="calendar-controls">
+    <button class="cal-nav-btn" id="calPrev">‹</button>
+    <h2 id="calLabel"></h2>
+    <button class="cal-nav-btn" id="calNext">›</button>
+    <button class="cal-today-btn" id="calToday">Hoje</button>
+  </div>
+  <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+
+<div class="archive-wrap" id="archiveView" style="display:none;">
+  <div class="archive-list" id="archiveList"></div>
+</div>
+
+<!-- Modal: novo ticket -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Novo ticket</h2>
+    <div class="field">
+      <label for="inputTitulo">Título</label>
+      <input type="text" id="inputTitulo" placeholder="Ex: Ajustar dashboard de vendas" />
+    </div>
+    <div class="field">
+      <label for="inputObs">Descrição</label>
+      <textarea id="inputObs" placeholder="O que precisa ser feito, contexto..."></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="inputStatus">Status</label>
+        <select id="inputStatus">
+          <option value="pendente">Pendente</option>
+          <option value="andamento">Em andamento</option>
+          <option value="finalizado">Finalizado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="inputPrioridade">Prioridade</label>
+        <select id="inputPrioridade">
+          <option value="baixa">Baixa</option>
+          <option value="media" selected>Média</option>
+          <option value="alta">Alta</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="inputData">Data</label>
+        <input type="date" id="inputData" />
+      </div>
+      <div class="field">
+        <label for="inputPrazo">Prazo (opcional)</label>
+        <input type="date" id="inputPrazo" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="inputTags">Tags (vírgula)</label>
+      <input type="text" id="inputTags" placeholder="ex: financeiro, cliente-x" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btnCancelar">Cancelar</button>
+      <button class="btn-new" id="btnSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: tickets do dia (calendário) -->
+<div class="overlay" id="dayOverlay">
+  <div class="modal day-modal">
+    <div class="day-modal-header">
+      <h2 id="dayModalTitle">Tickets do dia</h2>
+      <button class="icon-btn" id="btnCloseDay">✕</button>
+    </div>
+    <div class="day-list" id="dayList"></div>
+    <div class="modal-actions">
+      <button class="btn-new" id="btnAddForDay">+ Novo ticket neste dia</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalhe do ticket -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal detail-modal">
+    <div class="detail-header">
+      <span class="detail-numero" id="detailNumero">#0</span>
+      <button class="icon-btn" id="btnCloseDetail">✕</button>
+    </div>
+    <div class="field">
+      <label for="detailTituloInput">Título</label>
+      <input type="text" id="detailTituloInput" />
+    </div>
+    <div class="detail-fields">
+      <div class="field">
+        <label for="detailStatus">Status</label>
+        <select id="detailStatus">
+          <option value="pendente">Pendente</option>
+          <option value="andamento">Em andamento</option>
+          <option value="finalizado">Finalizado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="detailPrioridade">Prioridade</label>
+        <select id="detailPrioridade">
+          <option value="baixa">Baixa</option>
+          <option value="media">Média</option>
+          <option value="alta">Alta</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="detailDataInput">Data</label>
+        <input type="date" id="detailDataInput" />
+      </div>
+      <div class="field">
+        <label for="detailPrazoInput">Prazo (opcional)</label>
+        <input type="date" id="detailPrazoInput" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="detailDescricao">Descrição</label>
+      <textarea id="detailDescricao"></textarea>
+    </div>
+    <div class="field">
+      <label for="detailTags">Tags (vírgula)</label>
+      <input type="text" id="detailTags" />
+    </div>
+    <div class="field">
+      <label>Prints / anexos <span class="anexo-hint">(cole uma imagem com Ctrl+V nesta janela, ou anexe um arquivo)</span></label>
+      <div class="anexos-grid" id="anexosList"></div>
+      <label for="inputAnexoFile" class="btn-secondary anexo-upload-btn">📎 Anexar imagem</label>
+      <input type="file" id="inputAnexoFile" accept="image/*" multiple style="display:none;" />
+    </div>
+    <div class="field">
+      <label>Atividades / histórico de atualizações</label>
+      <div class="activities-list" id="activitiesList"></div>
+      <div class="activity-input-row">
+        <input type="text" id="novaAtividade" placeholder="Registrar uma atualização..." />
+        <button class="btn-new" id="btnAddAtividade">Adicionar</button>
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content: space-between;">
+      <button class="btn-secondary" id="btnDeleteDetail">🗄 Arquivar ticket</button>
+      <button class="btn-new" id="btnSaveDetail">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: fechamento de turno -->
+<div class="overlay" id="turnoOverlay">
+  <div class="modal turno-modal">
+    <div class="day-modal-header">
+      <h2>Fechamento de turno</h2>
+      <button class="icon-btn" id="btnCloseTurno">✕</button>
+    </div>
+    <div class="turno-alerta" id="turnoAlerta"></div>
+    <div class="field">
+      <label for="turnoData">Data</label>
+      <input type="date" id="turnoData" />
+    </div>
+    <div class="field">
+      <label>Resumo gerado (pronto para colar no seu relatório)</label>
+      <textarea id="turnoResumo" readonly></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btnCopiarTurno">Copiar para área de transferência</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="lightboxOverlay">
+  <img id="lightboxImg" src="" alt="print" />
+</div>
+
+<script>
+/* ---------- Banco de dados (IndexedDB) ---------- */
+const DB_NAME = 'painelTicketsDB';
+const DB_VERSION = 1;
+const STORE = 'tickets';
+const OLD_STORAGE_KEY = 'painel-tickets-data';
+let db;
+let allTickets = [];
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains(STORE)) {
+        const store = database.createObjectStore(STORE, { keyPath: 'id' });
+        store.createIndex('data', 'data', { unique: false });
+        store.createIndex('status', 'status', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function txStore(mode) {
+  return db.transaction(STORE, mode).objectStore(STORE);
+}
+
+function dbGetAll() {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readonly').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// Consulta real ao banco filtrando pelo índice "data"
+function dbGetByDate(dateStr) {
+  return new Promise((resolve, reject) => {
+    const idx = txStore('readonly').index('data');
+    const req = idx.getAll(dateStr);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbPut(ticket) {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readwrite').put(ticket);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbDelete(id) {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readwrite').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function migrateFromLocalStorage() {
+  const old = localStorage.getItem(OLD_STORAGE_KEY);
+  if (!old) return;
+  const existing = await dbGetAll();
+  if (existing.length > 0) return;
+  try {
+    const oldTickets = JSON.parse(old);
+    for (const t of oldTickets) {
+      if (!t.data) {
+        t.data = t.criadoEm ? t.criadoEm.slice(0, 10) : todayStr();
+      }
+      await dbPut(t);
+    }
+    localStorage.removeItem(OLD_STORAGE_KEY);
+  } catch {}
+}
+
+// Preenche campos novos (numero, prioridade, tags, atividades, descricao) em tickets antigos
+async function ensureMigratedFields() {
+  const all = await dbGetAll();
+  let maxNumero = 0;
+  all.forEach(t => { if (t.numero) maxNumero = Math.max(maxNumero, t.numero); });
+  const sorted = [...all].sort((a, b) => (a.criadoEm || '').localeCompare(b.criadoEm || ''));
+  for (const t of sorted) {
+    let needsSave = false;
+    if (!t.numero) { maxNumero++; t.numero = maxNumero; needsSave = true; }
+    if (t.prioridade === undefined) { t.prioridade = 'media'; needsSave = true; }
+    if (t.tags === undefined) { t.tags = []; needsSave = true; }
+    if (t.atividades === undefined) { t.atividades = []; needsSave = true; }
+    if (t.anexos === undefined) { t.anexos = []; needsSave = true; }
+    if (t.statusDesde === undefined) { t.statusDesde = t.criadoEm || new Date().toISOString(); needsSave = true; }
+    if (t.prazo === undefined) { t.prazo = null; needsSave = true; }
+    if (t.arquivado === undefined) { t.arquivado = false; needsSave = true; }
+    if (t.descricao === undefined) { t.descricao = t.obs || ''; delete t.obs; needsSave = true; }
+    if (needsSave) { await dbPut(t); }
+  }
+}
+
+function genId() {
+  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function nextNumero() {
+  return Math.max(0, ...allTickets.map(t => t.numero || 0)) + 1;
+}
+
+function priorityWeight(p) {
+  return { urgente: 4, alta: 3, media: 2, baixa: 1 }[p] || 2;
+}
+
+const PRIORIDADE_LABELS = { baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente' };
+
+function prazoInfo(t) {
+  if (!t.prazo) return null;
+  if (t.status === 'finalizado') return { texto: `Prazo ${formatDateBR(t.prazo)}`, nivel: 'ok' };
+  const hoje = todayStr();
+  let nivel = 'ok';
+  if (t.prazo < hoje) nivel = 'vencido';
+  else if (t.prazo === hoje) nivel = 'hoje';
+  return { texto: `Prazo ${formatDateBR(t.prazo)}`, nivel };
+}
+
+/* ---------- Helpers de data ---------- */
+function pad2(n) { return n.toString().padStart(2, '0'); }
+function dateKey(y, m, d) { return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
+function todayStr() {
+  const d = new Date();
+  return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function formatDateBR(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+function diasDesde(iso) {
+  const ms = new Date() - new Date(iso);
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
+
+/* ---------- Limites de WIP (Work In Progress) por coluna ---------- */
+const WIP_KEY = 'painel-wip-limits';
+function getWipLimits() {
+  try { return JSON.parse(localStorage.getItem(WIP_KEY)) || { andamento: 3 }; }
+  catch { return { andamento: 3 }; }
+}
+function getWipLimit(status) {
+  return getWipLimits()[status] || null;
+}
+function setWipLimit(status, value) {
+  const limits = getWipLimits();
+  if (value === null) delete limits[status];
+  else limits[status] = value;
+  localStorage.setItem(WIP_KEY, JSON.stringify(limits));
+}
+const STATUS_LABELS = { pendente: 'Pendente', andamento: 'Em andamento', finalizado: 'Finalizado' };
+
+/* ---------- Estado ---------- */
+let currentDayDate = null;
+let currentDetailId = null;
+let calYear, calMonth;
+let searchQuery = '';
+let filterPrioridade = 'todas';
+
+const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+const overlay = document.getElementById('overlay');
+const inputTitulo = document.getElementById('inputTitulo');
+const inputObs = document.getElementById('inputObs');
+const inputStatus = document.getElementById('inputStatus');
+const inputPrioridade = document.getElementById('inputPrioridade');
+const inputData = document.getElementById('inputData');
+const inputPrazo = document.getElementById('inputPrazo');
+const inputTags = document.getElementById('inputTags');
+const dayOverlay = document.getElementById('dayOverlay');
+const detailOverlay = document.getElementById('detailOverlay');
+const turnoOverlay = document.getElementById('turnoOverlay');
+
+/* ---------- Modal: novo ticket ---------- */
+function openCreateModal(presetDate) {
+  inputTitulo.value = '';
+  inputObs.value = '';
+  inputStatus.value = 'pendente';
+  inputPrioridade.value = 'media';
+  inputData.value = presetDate || todayStr();
+  inputPrazo.value = '';
+  inputTags.value = '';
+  overlay.classList.add('open');
+  inputTitulo.focus();
+}
+function closeModal() {
+  overlay.classList.remove('open');
+}
+
+document.getElementById('btnNovo').addEventListener('click', () => openCreateModal(null));
+document.getElementById('btnCancelar').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+document.getElementById('btnSalvar').addEventListener('click', async () => {
+  const titulo = inputTitulo.value.trim();
+  if (!titulo) { inputTitulo.focus(); return; }
+  const descricao = inputObs.value.trim();
+  const status = inputStatus.value;
+  const prioridade = inputPrioridade.value;
+  const data = inputData.value || todayStr();
+  const prazo = inputPrazo.value || null;
+  const tags = inputTags.value.split(',').map(s => s.trim()).filter(Boolean);
+
+  await dbPut({
+    id: genId(),
+    numero: nextNumero(),
+    titulo, descricao, status, prioridade, data, prazo, tags,
+    atividades: [],
+    anexos: [],
+    arquivado: false,
+    criadoEm: new Date().toISOString(),
+    statusDesde: new Date().toISOString()
+  });
+  closeModal();
+  await refreshAll();
+});
+
+async function archiveTicket(id) {
+  const t = allTickets.find(x => x.id === id);
+  if (!t) return;
+  await dbPut({ ...t, arquivado: true });
+  await refreshAll();
+}
+
+async function restoreTicket(id) {
+  const t = allTickets.find(x => x.id === id);
+  if (!t) return;
+  await dbPut({ ...t, arquivado: false });
+  await refreshAll();
+}
+
+async function permanentDelete(id) {
+  if (!confirm('Excluir definitivamente este ticket? Essa ação não pode ser desfeita.')) return;
+  await dbDelete(id);
+  await refreshAll();
+}
+
+function renderArchive() {
+  const list = document.getElementById('archiveList');
+  list.innerHTML = '';
+  const arquivados = allTickets.filter(t => t.arquivado).sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
+
+  if (arquivados.length === 0) {
+    list.innerHTML = '<div class="empty-hint">Nenhum ticket arquivado</div>';
+    return;
+  }
+
+  arquivados.forEach(t => {
+    const item = document.createElement('div');
+    item.className = 'archive-item';
+    item.innerHTML = `
+      <div class="archive-item-info">
+        <span class="archive-item-title">#${t.numero} ${t.titulo}</span>
+        <span class="archive-item-meta">${STATUS_LABELS[t.status] || t.status} • ${formatDateBR(t.data)}</span>
+      </div>
+      <div class="archive-actions">
+        <button class="btn-secondary restore-btn">Restaurar</button>
+        <button class="btn-secondary danger delete-btn">Excluir definitivamente</button>
+      </div>
+    `;
+    item.querySelector('.restore-btn').addEventListener('click', () => restoreTicket(t.id));
+    item.querySelector('.delete-btn').addEventListener('click', () => permanentDelete(t.id));
+    list.appendChild(item);
+  });
+}
+
+/* ---------- Cards (compartilhado entre quadro e painel do dia) ---------- */
+function createTicketCard(t, { draggable = true } = {}) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.draggable = draggable;
+  card.dataset.id = t.id;
+
+  const prioridade = t.prioridade || 'media';
+  const ultimaAtividade = (t.atividades && t.atividades.length) ? t.atividades[t.atividades.length - 1] : null;
+  const semAtualizacaoHoje = t.status === 'andamento' && (!ultimaAtividade || !ultimaAtividade.quando.startsWith(todayStr()));
+  if (semAtualizacaoHoje) card.classList.add('needs-update');
+
+  card.innerHTML = `
+    <div class="card-top-row">
+      <span class="priority-badge ${prioridade}">${PRIORIDADE_LABELS[prioridade]}</span>
+      <span class="card-numero">#${t.numero ?? '-'}</span>
+    </div>
+    <div class="card-status-row">
+      <span class="dot ${t.status}"></span>
+      <span></span>
+      <span class="prazo-badge"></span>
+      <span class="aging-badge"></span>
+    </div>
+    <h3></h3>
+    <p class="card-desc"></p>
+    <div class="card-tags"></div>
+    <div class="card-footer">
+      <span class="card-activity-info"></span>
+      <button class="icon-btn archive" title="Arquivar">🗄</button>
+    </div>
+  `;
+  card.querySelector('.card-status-row span:nth-child(2)').textContent = formatDateBR(t.data);
+
+  const pInfo = prazoInfo(t);
+  const prazoEl = card.querySelector('.prazo-badge');
+  if (pInfo) {
+    prazoEl.textContent = pInfo.texto;
+    prazoEl.classList.add(pInfo.nivel);
+  } else {
+    prazoEl.remove();
+  }
+
+  const agingEl = card.querySelector('.aging-badge');
+  const statusDesdeRef = t.statusDesde || t.criadoEm;
+  if ((t.status === 'pendente' || t.status === 'andamento') && statusDesdeRef) {
+    const dias = diasDesde(statusDesdeRef);
+    let nivel = 'ok';
+    if (dias >= 7) nivel = 'critico';
+    else if (dias >= 3) nivel = 'atencao';
+    agingEl.classList.add(nivel);
+    agingEl.textContent = dias <= 0 ? 'hoje' : `há ${dias}d`;
+  } else {
+    agingEl.remove();
+  }
+
+  card.querySelector('h3').textContent = t.titulo;
+  card.querySelector('.card-desc').textContent = t.descricao || '(sem descrição)';
+
+  const tagsWrap = card.querySelector('.card-tags');
+  (t.tags || []).forEach(tag => {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.textContent = tag;
+    tagsWrap.appendChild(chip);
+  });
+
+  const activityInfo = card.querySelector('.card-activity-info');
+  let infoText;
+  if (ultimaAtividade) {
+    const when = new Date(ultimaAtividade.quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    infoText = `🗨 ${t.atividades.length} • última em ${when}`;
+  } else {
+    infoText = '🗨 sem atualizações';
+  }
+  if (t.anexos && t.anexos.length) infoText += ` • 📎 ${t.anexos.length}`;
+  if (semAtualizacaoHoje) infoText = `⚠ sem atualização hoje` + (t.anexos && t.anexos.length ? ` • 📎 ${t.anexos.length}` : '');
+  activityInfo.textContent = infoText;
+
+  card.querySelector('.archive').addEventListener('click', (e) => {
+    e.stopPropagation();
+    archiveTicket(t.id);
+  });
+
+  card.addEventListener('click', () => openDetail(t));
+
+  if (draggable) {
+    card.addEventListener('dragstart', () => card.classList.add('dragging'));
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  }
+
+  return card;
+}
+
+/* ---------- Filtros do quadro ---------- */
+function normalizarBusca(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function getFilteredTickets() {
+  return allTickets.filter(t => {
+    if (t.arquivado) return false;
+    if (filterPrioridade !== 'todas' && (t.prioridade || 'media') !== filterPrioridade) return false;
+    if (searchQuery) {
+      const q = normalizarBusca(searchQuery);
+      const haystack = normalizarBusca([t.titulo, t.descricao, ...(t.tags || [])].join(' '));
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+['pendente', 'andamento', 'finalizado'].forEach(status => {
+  const countEl = document.getElementById(`count-${status}`);
+  const inputEl = document.getElementById(`wipinput-${status}`);
+  countEl.title = 'Clique para definir um limite de WIP (Work In Progress) para esta coluna';
+
+  const openEditor = () => {
+    inputEl.value = getWipLimit(status) || '';
+    countEl.style.display = 'none';
+    inputEl.style.display = 'inline-block';
+    inputEl.focus();
+    inputEl.select();
+  };
+  const closeEditor = (commit) => {
+    if (commit) {
+      const trimmed = inputEl.value.trim();
+      if (trimmed === '') {
+        setWipLimit(status, null);
+      } else {
+        const n = parseInt(trimmed, 10);
+        if (!isNaN(n) && n > 0) setWipLimit(status, n);
+      }
+    }
+    inputEl.style.display = 'none';
+    countEl.style.display = '';
+    renderBoard();
+  };
+
+  countEl.addEventListener('click', openEditor);
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); closeEditor(true); }
+    if (e.key === 'Escape') { e.preventDefault(); closeEditor(false); }
+  });
+  inputEl.addEventListener('blur', () => closeEditor(true));
+});
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchQuery = e.target.value;
+  renderBoard();
+});
+document.getElementById('filterPrioridade').addEventListener('change', (e) => {
+  filterPrioridade = e.target.value;
+  renderBoard();
+});
+
+/* ---------- Quadro (Kanban) ---------- */
+function renderBoard() {
+  const filtered = getFilteredTickets();
+  const cols = { pendente: [], andamento: [], finalizado: [] };
+  filtered.forEach(t => cols[t.status] && cols[t.status].push(t));
+
+  const totalReal = { pendente: 0, andamento: 0, finalizado: 0 };
+  allTickets.forEach(t => { if (!t.arquivado && totalReal[t.status] !== undefined) totalReal[t.status]++; });
+
+  const buscaAtiva = !!searchQuery || filterPrioridade !== 'todas';
+
+  Object.keys(cols).forEach(status => {
+    const container = document.getElementById(`cards-${status}`);
+    const countEl = document.getElementById(`count-${status}`);
+    const limit = getWipLimit(status);
+    const total = totalReal[status];
+    const overLimit = !!limit && total > limit;
+
+    countEl.textContent = limit ? `${total} / ${limit}` : `${total}`;
+    countEl.classList.toggle('over-limit', overLimit);
+    document.querySelector(`.column[data-status="${status}"]`).classList.toggle('over-limit-column', overLimit);
+
+    container.innerHTML = '';
+
+    if (cols[status].length === 0) {
+      const hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = buscaAtiva ? 'Nenhum ticket encontrado' : 'Nenhum ticket aqui';
+      container.appendChild(hint);
+      return;
+    }
+
+    cols[status]
+      .sort((a, b) => priorityWeight(b.prioridade) - priorityWeight(a.prioridade) || (b.data || '').localeCompare(a.data || ''))
+      .forEach(t => container.appendChild(createTicketCard(t)));
+  });
+}
+
+document.querySelectorAll('.cards').forEach(container => {
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    container.classList.add('drag-over');
+  });
+  container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
+  container.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    container.classList.remove('drag-over');
+    const draggingCard = document.querySelector('.card.dragging');
+    if (!draggingCard) return;
+    const id = draggingCard.dataset.id;
+    const newStatus = container.dataset.status;
+    const t = allTickets.find(t => t.id === id);
+    if (t && t.status !== newStatus) {
+      await dbPut({ ...t, status: newStatus, statusDesde: new Date().toISOString() });
+      await refreshAll();
+    }
+  });
+});
+
+/* ---------- Calendário ---------- */
+function initCalendarState() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  document.getElementById('calLabel').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+  weekDays.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-weekday';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  const byDate = {};
+  allTickets.forEach(t => {
+    if (t.arquivado) return;
+    const key = t.data;
+    if (!key) return;
+    (byDate[key] = byDate[key] || []).push(t);
+  });
+
+  const today = todayStr();
+
+  for (let i = 0; i < totalCells; i++) {
+    const dayNum = i - firstDay + 1;
+    let cellDate, otherMonth = false;
+
+    if (dayNum < 1) {
+      const py = calMonth === 0 ? calYear - 1 : calYear;
+      const pm = calMonth === 0 ? 11 : calMonth - 1;
+      cellDate = dateKey(py, pm, daysInPrevMonth + dayNum);
+      otherMonth = true;
+    } else if (dayNum > daysInMonth) {
+      const ny = calMonth === 11 ? calYear + 1 : calYear;
+      const nm = calMonth === 11 ? 0 : calMonth + 1;
+      cellDate = dateKey(ny, nm, dayNum - daysInMonth);
+      otherMonth = true;
+    } else {
+      cellDate = dateKey(calYear, calMonth, dayNum);
+    }
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' + (otherMonth ? ' other-month' : '') + (cellDate === today ? ' today' : '');
+
+    const dayLabel = document.createElement('div');
+    dayLabel.className = 'cal-day-num';
+    dayLabel.textContent = parseInt(cellDate.slice(8, 10), 10);
+    cell.appendChild(dayLabel);
+
+    const dayTickets = (byDate[cellDate] || []).sort((a, b) => priorityWeight(b.prioridade) - priorityWeight(a.prioridade));
+    const chipsWrap = document.createElement('div');
+    chipsWrap.className = 'cal-chips';
+    dayTickets.slice(0, 3).forEach(t => {
+      const chip = document.createElement('div');
+      chip.className = `cal-chip ${t.status}`;
+      const prefix = t.prioridade === 'urgente' ? '🔴 ' : t.prioridade === 'alta' ? '🟠 ' : '';
+      chip.textContent = `${prefix}${t.titulo}`;
+      chipsWrap.appendChild(chip);
+    });
+    if (dayTickets.length > 3) {
+      const more = document.createElement('div');
+      more.className = 'cal-chip-more';
+      more.textContent = `+${dayTickets.length - 3} mais`;
+      chipsWrap.appendChild(more);
+    }
+    cell.appendChild(chipsWrap);
+
+    cell.addEventListener('click', () => openDayPanel(cellDate));
+    grid.appendChild(cell);
+  }
+}
+
+document.getElementById('calPrev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+document.getElementById('calToday').addEventListener('click', () => {
+  initCalendarState();
+  renderCalendar();
+});
+
+/* ---------- Painel "tickets do dia" (consulta ao banco por data) ---------- */
+async function openDayPanel(dateStr) {
+  currentDayDate = dateStr;
+  const tickets = (await dbGetByDate(dateStr)).filter(t => !t.arquivado);
+  const list = document.getElementById('dayList');
+  list.innerHTML = '';
+
+  const label = new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+  });
+  document.getElementById('dayModalTitle').textContent = label;
+
+  if (tickets.length === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'empty-hint';
+    hint.textContent = 'Nenhum ticket nesse dia';
+    list.appendChild(hint);
+  } else {
+    tickets
+      .sort((a, b) => priorityWeight(b.prioridade) - priorityWeight(a.prioridade))
+      .forEach(t => list.appendChild(createTicketCard(t, { draggable: false })));
+  }
+  dayOverlay.classList.add('open');
+}
+
+function closeDayPanel() {
+  dayOverlay.classList.remove('open');
+  currentDayDate = null;
+}
+
+document.getElementById('btnCloseDay').addEventListener('click', closeDayPanel);
+dayOverlay.addEventListener('click', (e) => { if (e.target === dayOverlay) closeDayPanel(); });
+document.getElementById('btnAddForDay').addEventListener('click', () => {
+  openCreateModal(currentDayDate || todayStr());
+});
+
+/* ---------- Modal: detalhe do ticket ---------- */
+function openDetail(t) {
+  currentDetailId = t.id;
+  document.getElementById('detailNumero').textContent = `#${t.numero ?? '-'}`;
+  document.getElementById('detailTituloInput').value = t.titulo;
+  document.getElementById('detailDescricao').value = t.descricao || '';
+  document.getElementById('detailStatus').value = t.status;
+  document.getElementById('detailPrioridade').value = t.prioridade || 'media';
+  document.getElementById('detailDataInput').value = t.data;
+  document.getElementById('detailPrazoInput').value = t.prazo || '';
+  document.getElementById('detailTags').value = (t.tags || []).join(', ');
+  renderActivities(t.atividades || []);
+  renderAnexos(t.anexos || []);
+  detailOverlay.classList.add('open');
+}
+
+function renderActivities(atividades) {
+  const list = document.getElementById('activitiesList');
+  list.innerHTML = '';
+  if (!atividades.length) {
+    list.innerHTML = '<div class="empty-hint">Nenhuma atualização registrada ainda</div>';
+    return;
+  }
+  atividades
+    .slice()
+    .sort((a, b) => a.quando.localeCompare(b.quando))
+    .forEach(a => {
+      const item = document.createElement('div');
+      item.className = 'activity-item';
+      const time = document.createElement('span');
+      time.className = 'activity-time';
+      time.textContent = new Date(a.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const text = document.createElement('div');
+      text.textContent = a.texto;
+      item.appendChild(time);
+      item.appendChild(text);
+      list.appendChild(item);
+    });
+  list.scrollTop = list.scrollHeight;
+}
+
+function closeDetail() {
+  detailOverlay.classList.remove('open');
+  currentDetailId = null;
+}
+
+document.getElementById('btnCloseDetail').addEventListener('click', closeDetail);
+detailOverlay.addEventListener('click', (e) => { if (e.target === detailOverlay) closeDetail(); });
+
+async function addAtividade() {
+  const input = document.getElementById('novaAtividade');
+  const texto = input.value.trim();
+  if (!texto || !currentDetailId) return;
+  const t = allTickets.find(x => x.id === currentDetailId);
+  const atividades = [...(t.atividades || []), { texto, quando: new Date().toISOString() }];
+  await dbPut({ ...t, atividades });
+  input.value = '';
+  allTickets = await dbGetAll();
+  const updated = allTickets.find(x => x.id === currentDetailId);
+  renderActivities(updated.atividades);
+  renderBoard();
+  renderCalendar();
+}
+
+document.getElementById('btnAddAtividade').addEventListener('click', addAtividade);
+document.getElementById('novaAtividade').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addAtividade(); }
+});
+
+document.getElementById('btnSaveDetail').addEventListener('click', async () => {
+  const t = allTickets.find(x => x.id === currentDetailId);
+  const titulo = document.getElementById('detailTituloInput').value.trim();
+  if (!titulo) return;
+  const descricao = document.getElementById('detailDescricao').value.trim();
+  const status = document.getElementById('detailStatus').value;
+  const prioridade = document.getElementById('detailPrioridade').value;
+  const data = document.getElementById('detailDataInput').value || t.data;
+  const prazo = document.getElementById('detailPrazoInput').value || null;
+  const tags = document.getElementById('detailTags').value.split(',').map(s => s.trim()).filter(Boolean);
+  const statusChanged = status !== t.status;
+  await dbPut({
+    ...t, titulo, descricao, status, prioridade, data, prazo, tags,
+    ...(statusChanged ? { statusDesde: new Date().toISOString() } : {})
+  });
+  closeDetail();
+  await refreshAll();
+});
+
+document.getElementById('btnDeleteDetail').addEventListener('click', async () => {
+  if (!currentDetailId) return;
+  await archiveTicket(currentDetailId);
+  closeDetail();
+});
+
+/* ---------- Anexos / prints ---------- */
+let currentAnexoUrls = [];
+
+function renderAnexos(anexos) {
+  currentAnexoUrls.forEach(u => URL.revokeObjectURL(u));
+  currentAnexoUrls = [];
+
+  const wrap = document.getElementById('anexosList');
+  wrap.innerHTML = '';
+  if (!anexos.length) {
+    wrap.innerHTML = '<div class="empty-hint">Nenhum print/anexo ainda</div>';
+    return;
+  }
+  anexos.forEach(a => {
+    const url = URL.createObjectURL(a.blob);
+    currentAnexoUrls.push(url);
+    const box = document.createElement('div');
+    box.className = 'anexo-thumb';
+    box.innerHTML = `<img src="${url}" alt="${a.nome}" /><button class="anexo-remove" title="Remover">✕</button>`;
+    box.querySelector('img').addEventListener('click', () => openLightbox(url));
+    box.querySelector('.anexo-remove').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await removeAnexo(a.id);
+    });
+    wrap.appendChild(box);
+  });
+}
+
+async function addAnexo(blob, nome) {
+  if (!currentDetailId) return;
+  const t = allTickets.find(x => x.id === currentDetailId);
+  const anexo = { id: genId(), blob, nome: nome || 'print.png', quando: new Date().toISOString() };
+  const anexos = [...(t.anexos || []), anexo];
+  await dbPut({ ...t, anexos });
+  allTickets = await dbGetAll();
+  const updated = allTickets.find(x => x.id === currentDetailId);
+  renderAnexos(updated.anexos || []);
+  renderBoard();
+}
+
+async function removeAnexo(id) {
+  if (!currentDetailId) return;
+  const t = allTickets.find(x => x.id === currentDetailId);
+  const anexos = (t.anexos || []).filter(a => a.id !== id);
+  await dbPut({ ...t, anexos });
+  allTickets = await dbGetAll();
+  const updated = allTickets.find(x => x.id === currentDetailId);
+  renderAnexos(updated.anexos || []);
+  renderBoard();
+}
+
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightboxOverlay').classList.add('open');
+}
+document.getElementById('lightboxOverlay').addEventListener('click', () => {
+  document.getElementById('lightboxOverlay').classList.remove('open');
+});
+
+document.addEventListener('paste', async (e) => {
+  if (!detailOverlay.classList.contains('open')) return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type && item.type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      if (blob) {
+        e.preventDefault();
+        await addAnexo(blob, `print-${Date.now()}.png`);
+      }
+    }
+  }
+});
+
+document.getElementById('inputAnexoFile').addEventListener('change', async (e) => {
+  const files = [...e.target.files];
+  for (const f of files) {
+    await addAnexo(f, f.name);
+  }
+  e.target.value = '';
+});
+
+/* ---------- Fechamento de turno ---------- */
+function getTicketsSemAtualizacaoHoje() {
+  const hoje = todayStr();
+  return allTickets.filter(t => {
+    if (t.arquivado) return false;
+    if (t.status !== 'andamento') return false;
+    const atividades = t.atividades || [];
+    if (atividades.length === 0) return true;
+    const ultima = atividades[atividades.length - 1];
+    return !ultima.quando.startsWith(hoje);
+  });
+}
+
+function renderTurnoAlerta(dateStr) {
+  const alertaBox = document.getElementById('turnoAlerta');
+  alertaBox.innerHTML = '';
+  if (dateStr !== todayStr()) { alertaBox.style.display = 'none'; return; }
+
+  const pendentes = getTicketsSemAtualizacaoHoje();
+  if (pendentes.length === 0) { alertaBox.style.display = 'none'; return; }
+
+  alertaBox.style.display = 'block';
+  const titulo = document.createElement('strong');
+  titulo.textContent = `⚠️ ${pendentes.length} ticket(s) em andamento sem atualização hoje`;
+  alertaBox.appendChild(titulo);
+  const sub = document.createElement('div');
+  sub.textContent = 'Registre o progresso antes de fechar o turno:';
+  alertaBox.appendChild(sub);
+
+  const list = document.createElement('div');
+  list.className = 'turno-alerta-list';
+  pendentes.forEach(t => {
+    const item = document.createElement('button');
+    item.className = 'turno-alerta-item';
+    item.textContent = `#${t.numero} ${t.titulo}`;
+    item.addEventListener('click', () => {
+      turnoOverlay.classList.remove('open');
+      openDetail(t);
+    });
+    list.appendChild(item);
+  });
+  alertaBox.appendChild(list);
+}
+
+async function renderTurnoResumo(dateStr) {
+  const tickets = (await dbGetByDate(dateStr)).filter(t => !t.arquivado);
+  const groups = { finalizado: [], andamento: [], pendente: [] };
+  tickets.forEach(t => groups[t.status] && groups[t.status].push(t));
+  const order = ['finalizado', 'andamento', 'pendente'];
+  const labels = { finalizado: '✅ Finalizado', andamento: '🔄 Em andamento', pendente: '⏳ Pendente' };
+
+  let out = `FECHAMENTO DE TURNO — ${formatDateBR(dateStr)}\n`;
+  out += `${'='.repeat(44)}\n\n`;
+
+  let total = 0;
+  order.forEach(status => {
+    const list = groups[status];
+    if (list.length === 0) return;
+    total += list.length;
+    out += `${labels[status]} (${list.length})\n`;
+    list
+      .sort((a, b) => priorityWeight(b.prioridade) - priorityWeight(a.prioridade))
+      .forEach(t => {
+        const ultima = (t.atividades && t.atividades.length)
+          ? t.atividades[t.atividades.length - 1].texto
+          : (t.descricao || 'Sem observações registradas');
+        out += `  #${t.numero} [${PRIORIDADE_LABELS[t.prioridade] || 'Média'}] ${t.titulo}\n`;
+        out += `      -> ${ultima}\n`;
+      });
+    out += `\n`;
+  });
+
+  if (total === 0) {
+    out += 'Nenhum ticket registrado para esse dia.\n';
+  } else {
+    out += `Total de tickets no dia: ${total}\n`;
+  }
+
+  document.getElementById('turnoResumo').value = out;
+}
+
+document.getElementById('btnTurno').addEventListener('click', async () => {
+  const d = todayStr();
+  document.getElementById('turnoData').value = d;
+  renderTurnoAlerta(d);
+  await renderTurnoResumo(d);
+  turnoOverlay.classList.add('open');
+});
+document.getElementById('turnoData').addEventListener('change', (e) => {
+  const d = e.target.value || todayStr();
+  renderTurnoAlerta(d);
+  renderTurnoResumo(d);
+});
+document.getElementById('btnCloseTurno').addEventListener('click', () => turnoOverlay.classList.remove('open'));
+turnoOverlay.addEventListener('click', (e) => { if (e.target === turnoOverlay) turnoOverlay.classList.remove('open'); });
+
+document.getElementById('btnCopiarTurno').addEventListener('click', async () => {
+  const texto = document.getElementById('turnoResumo').value;
+  const btn = document.getElementById('btnCopiarTurno');
+  try {
+    await navigator.clipboard.writeText(texto);
+    const original = btn.textContent;
+    btn.textContent = 'Copiado!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch {
+    alert('Não foi possível copiar automaticamente. Selecione o texto manualmente.');
+  }
+});
+
+/* ---------- Alternância de views ---------- */
+document.querySelectorAll('.view-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.view-tab').forEach(x => x.classList.remove('active'));
+    tab.classList.add('active');
+    const view = tab.dataset.view;
+    document.getElementById('boardView').style.display = view === 'board' ? 'grid' : 'none';
+    document.getElementById('boardToolbar').style.display = view === 'board' ? 'flex' : 'none';
+    document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
+    document.getElementById('archiveView').style.display = view === 'archive' ? 'block' : 'none';
+    if (view === 'archive') renderArchive();
+  });
+});
+
+/* ---------- Ciclo de vida ---------- */
+async function refreshAll() {
+  allTickets = await dbGetAll();
+  renderBoard();
+  renderCalendar();
+  renderArchive();
+  if (currentDayDate && dayOverlay.classList.contains('open')) {
+    await openDayPanel(currentDayDate);
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeDayPanel();
+    closeDetail();
+    turnoOverlay.classList.remove('open');
+    document.getElementById('lightboxOverlay').classList.remove('open');
+  }
+});
+
+async function init() {
+  db = await openDB();
+  await migrateFromLocalStorage();
+  await ensureMigratedFields();
+  initCalendarState();
+  await refreshAll();
+}
+
+init();
+</script>
+
+</body>
+</html>
