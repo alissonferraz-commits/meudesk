@@ -544,6 +544,7 @@
       <button class="view-tab" data-view="calendar">Calendário</button>
       <button class="view-tab" data-view="archive">Arquivados</button>
     </div>
+    <button class="btn-secondary" id="btnBackup" title="Exportar ou importar backup">💾 Backup</button>
     <button class="btn-secondary" id="btnTurno">📋 Fechamento de turno</button>
     <button class="btn-new" id="btnNovo">+ Novo ticket</button>
   </div>
@@ -741,6 +742,22 @@
     <div class="modal-actions" style="justify-content: space-between;">
       <button class="btn-secondary" id="btnDeleteDetail">🗄 Arquivar ticket</button>
       <button class="btn-new" id="btnSaveDetail">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: backup -->
+<div class="overlay" id="backupOverlay">
+  <div class="modal">
+    <h2>Backup dos dados</h2>
+    <p style="color:var(--muted); font-size:13px; margin-top:-10px;">Seus tickets ficam salvos só neste navegador. Exporte um backup regularmente, principalmente antes de trocar de máquina ou navegador.</p>
+    <div class="modal-actions" style="justify-content: flex-start; gap: 10px; margin-top: 20px;">
+      <button class="btn-new" id="btnExportBackup">⬇️ Exportar backup</button>
+      <label for="inputImportBackup" class="btn-secondary anexo-upload-btn">⬆️ Importar backup</label>
+      <input type="file" id="inputImportBackup" accept="application/json" style="display:none;" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btnCloseBackup">Fechar</button>
     </div>
   </div>
 </div>
@@ -1569,6 +1586,95 @@ document.getElementById('inputAnexoFile').addEventListener('change', async (e) =
   e.target.value = '';
 });
 
+/* ---------- Backup (exportar / importar) ---------- */
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function base64ToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(',');
+  const mimeMatch = header.match(/data:(.*?);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+async function exportBackup() {
+  const tickets = await dbGetAll();
+  const serializaveis = await Promise.all(tickets.map(async t => {
+    const anexos = await Promise.all((t.anexos || []).map(async a => ({
+      id: a.id, nome: a.nome, quando: a.quando,
+      dataUrl: await blobToBase64(a.blob)
+    })));
+    return { ...t, anexos };
+  }));
+
+  const payload = {
+    versao: 1,
+    exportadoEm: new Date().toISOString(),
+    wipLimits: getWipLimits(),
+    tickets: serializaveis
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `meudesk-backup-${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importBackup(file) {
+  const texto = await file.text();
+  let payload;
+  try {
+    payload = JSON.parse(texto);
+  } catch {
+    alert('Arquivo inválido: não é um JSON válido.');
+    return;
+  }
+  if (!payload || !Array.isArray(payload.tickets)) {
+    alert('Arquivo de backup inválido.');
+    return;
+  }
+  const ok = confirm(`Importar ${payload.tickets.length} ticket(s)?\n\nTickets com o mesmo ID serão substituídos pela versão do backup; os demais tickets atuais permanecem.`);
+  if (!ok) return;
+
+  for (const t of payload.tickets) {
+    const anexos = (t.anexos || []).map(a => ({
+      id: a.id, nome: a.nome, quando: a.quando,
+      blob: base64ToBlob(a.dataUrl)
+    }));
+    await dbPut({ ...t, anexos });
+  }
+  if (payload.wipLimits) {
+    localStorage.setItem(WIP_KEY, JSON.stringify(payload.wipLimits));
+  }
+  await refreshAll();
+  alert('Backup importado com sucesso!');
+}
+
+const backupOverlay = document.getElementById('backupOverlay');
+document.getElementById('btnBackup').addEventListener('click', () => backupOverlay.classList.add('open'));
+document.getElementById('btnCloseBackup').addEventListener('click', () => backupOverlay.classList.remove('open'));
+backupOverlay.addEventListener('click', (e) => { if (e.target === backupOverlay) backupOverlay.classList.remove('open'); });
+document.getElementById('btnExportBackup').addEventListener('click', exportBackup);
+document.getElementById('inputImportBackup').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (file) await importBackup(file);
+  e.target.value = '';
+});
+
 /* ---------- Fechamento de turno ---------- */
 function getTicketsSemAtualizacaoHoje() {
   const hoje = todayStr();
@@ -1710,6 +1816,7 @@ document.addEventListener('keydown', (e) => {
     closeDetail();
     turnoOverlay.classList.remove('open');
     document.getElementById('lightboxOverlay').classList.remove('open');
+    backupOverlay.classList.remove('open');
   }
 });
 
